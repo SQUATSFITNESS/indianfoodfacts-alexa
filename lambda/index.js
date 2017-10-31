@@ -14,7 +14,7 @@ let http = require('http');
 // --------------- Helpers that build all of the responses -----------------------
 
 function buildSpeechletResponse(title, cardOutput, speechOutput, repromptText, shouldEndSession) {
-    return {
+    let response = {
         outputSpeech: {
             type: 'PlainText',
             text: speechOutput,
@@ -32,6 +32,8 @@ function buildSpeechletResponse(title, cardOutput, speechOutput, repromptText, s
         },
         shouldEndSession,
     };
+    console.log('@@@@@@Final response : ', response);
+    return response;
 }
 
 function buildResponse(sessionAttributes, speechletResponse) {
@@ -83,7 +85,7 @@ function getFoodFact(intent, session, callback) {
 
     console.log(`##### FOOD: ${food}`);
     if (food) {
-        var url = 'http://indian-food.herokuapp.com/api/food/' + food;
+        const url = 'http://indian-food.herokuapp.com/api/food/' + food;
         console.log(`URL: ${url}`);
 
         http.get(url, function(res) {
@@ -96,13 +98,13 @@ function getFoodFact(intent, session, callback) {
                     cardOutput = `Nutrition facts of "${body.name.replace('&', ' and ')}" are as follows. \n` +
                         `Fat: ${body.fatInGm} grams, \nCarbs: ${body.carbInGm} grams, \nProtein: ${body.proteinInGm} grams, \nCalories: ${body.calories}`;
                     speechOutput = `Nutrition facts of ${body.name.replace('&', ' and ')} are as follows. ` +
-                        `Fat: ${body.fatInGm} grams, Carbs: ${body.carbInGm} grams, Protein: ${body.proteinInGm} grams, Calories: ${body.calories}. Do you want to know about any other food?`;
+                        `Fat: ${body.fatInGm} grams, Carbs: ${body.carbInGm} grams, Protein: ${body.proteinInGm} grams, Calories: ${body.calories}`;
                 } else {
                     console.log('Response from IndiaFood: Food details not found');
                     speechOutput = `Nutrition facts of "${food}" are not found. Please try some other food.`;
                     cardOutput = speechOutput;
                 }
-                shouldEndSession = false;
+                shouldEndSession = true;
 
                 callback(sessionAttributes,
                     buildSpeechletResponse(food, cardOutput, speechOutput, repromptText, shouldEndSession));
@@ -137,7 +139,7 @@ function getAnyFoodFact(intent, session, callback) {
     let cardOutput = '';
     let speechOutput = '';
 
-    var url = 'http://indian-food.herokuapp.com/api/food/rasgulla';
+    var url = 'http://indian-food.herokuapp.com/api/food';
     console.log(`URL: ${url}`);
 
     http.get(url, function(res) {
@@ -159,7 +161,7 @@ function getAnyFoodFact(intent, session, callback) {
             shouldEndSession = true;
 
             callback(sessionAttributes,
-                buildSpeechletResponse(food, cardOutput, speechOutput, repromptText, shouldEndSession));
+                buildSpeechletResponse(body.name, cardOutput, speechOutput, repromptText, shouldEndSession));
         });
 
     }).on('error', function(e) {
@@ -252,14 +254,14 @@ exports.handler = (event, context, callback) => {
             onLaunch(event.request,
                 event.session,
                 (sessionAttributes, speechletResponse) => {
-                callback(null, buildResponse(sessionAttributes, speechletResponse));
-        });
+                    callback(null, buildResponse(sessionAttributes, speechletResponse));
+                });
         } else if (event.request.type === 'IntentRequest') {
             onIntent(event.request,
                 event.session,
                 (sessionAttributes, speechletResponse) => {
-                callback(null, buildResponse(sessionAttributes, speechletResponse));
-        });
+                    callback(null, buildResponse(sessionAttributes, speechletResponse));
+                });
         } else if (event.request.type === 'SessionEndedRequest') {
             onSessionEnded(event.request, event.session);
             callback();
