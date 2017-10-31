@@ -1,6 +1,15 @@
 'use strict';
 let http = require('http');
 
+/**
+ * This sample demonstrates a simple skill built with the Amazon Alexa Skills Kit.
+ * The Intent Schema, Custom Slots, and Sample Utterances for this skill, as well as
+ * testing instructions are located at http://amzn.to/1LzFrj6
+ *
+ * For additional samples, visit the Alexa Skills Kit Getting Started guide at
+ * http://amzn.to/1LGWsLG
+ */
+
 
 // --------------- Helpers that build all of the responses -----------------------
 
@@ -60,27 +69,17 @@ function handleSessionEndRequest(callback) {
     callback({}, buildSpeechletResponse(cardTitle, speechOutput, null, shouldEndSession));
 }
 
-function createFavoriteColorAttributes(favoriteColor) {
-    return {
-        favoriteColor,
-    };
-}
-
 /**
  * Get food nutrition facts
  */
 function getFoodFact(intent, session, callback) {
-    let food;
+    let food = intent.slots.food.value;
     const repromptText = null;
     const sessionAttributes = {};
     let shouldEndSession = false;
     let speechOutput = '';
 
-    if (session.attributes) {
-        food = intent.slots.food.value;
-    }
-
-    console.log(`Food: ${food}`);
+    console.log(`##### FOOD: ${food}`);
     if (food) {
         var url = 'http://indian-food.herokuapp.com/api/food/' + food;
         console.log(`URL: ${url}`);
@@ -90,9 +89,14 @@ function getFoodFact(intent, session, callback) {
                 body = JSON.parse(body);
                 console.log('BODY: ' + body);
 
-                console.log('Response from IndiaFood: ' + body.name);
-                speechOutput = `Nutrition facts of ${body.name.replace('&', ' and ')} are as follows. ` +
-                    `Fat: ${body.fatInGm} grams, Carbs: ${body.carbInGm} grams, Protein: ${body.proteinInGm} grams, Calories: ${body.calories}`;
+                if(body.name) {
+                    console.log('Response from IndiaFood: ' + body.name);
+                    speechOutput = `Nutrition facts of ${body.name.replace('&', ' and ')} are as follows. ` +
+                        `Fat: ${body.fatInGm} grams, Carbs: ${body.carbInGm} grams, Protein: ${body.proteinInGm} grams, Calories: ${body.calories}`;
+                } else {
+                    console.log('Response from IndiaFood: Food details not found');
+                    speechOutput = `Nutrition facts of ${food} are not found. Please try some other food.`;
+                }
                 shouldEndSession = true;
 
                 callback(sessionAttributes,
@@ -118,6 +122,42 @@ function getFoodFact(intent, session, callback) {
     // If the user does not respond or says something that is not understood, the session
     // will end.
 
+}
+
+
+/**
+ * Get food nutrition facts
+ */
+function getAnyFoodFact(intent, session, callback) {
+    const repromptText = null;
+    const sessionAttributes = {};
+    let shouldEndSession = false;
+    let speechOutput = '';
+
+    var url = 'http://indian-food.herokuapp.com/api/food/rasgulla';
+    console.log(`URL: ${url}`);
+
+    http.get(url, function(res) {
+        res.on('data', function (body) {
+            body = JSON.parse(body);
+            console.log('BODY: ' + body);
+
+            console.log('Response from IndiaFood: ' + body.name);
+            speechOutput = `Nutrition facts of ${body.name.replace('&', ' and ')} are as follows. ` +
+                `Fat: ${body.fatInGm} grams, Carbs: ${body.carbInGm} grams, Protein: ${body.proteinInGm} grams, Calories: ${body.calories}`;
+            shouldEndSession = true;
+
+            callback(sessionAttributes,
+                buildSpeechletResponse(intent.name, speechOutput, repromptText, shouldEndSession));
+        });
+
+    }).on('error', function(e) {
+        speechOutput = 'Could not get data. Sorry!';
+        console.log("Got error: " + e.message);
+
+        callback(sessionAttributes,
+            buildSpeechletResponse(intent.name, speechOutput, repromptText, shouldEndSession));
+    });
 }
 
 
@@ -149,9 +189,12 @@ function onIntent(intentRequest, session, callback) {
     const intent = intentRequest.intent;
     const intentName = intentRequest.intent.name;
 
+    console.log(`$$$$$$$ ${intentName}`);
     // Dispatch to your skill's intent handlers
     if (intentName === 'FindFood') {
         getFoodFact(intent, session, callback);
+    } else if (intentName === 'AnyFood') {
+        getAnyFoodFact(intent, session, callback);
     } else if (intentName === 'AMAZON.HelpIntent') {
         getWelcomeResponse(callback);
     } else if (intentName === 'AMAZON.StopIntent' || intentName === 'AMAZON.CancelIntent') {
