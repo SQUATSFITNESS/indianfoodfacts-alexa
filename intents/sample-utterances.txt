@@ -1,0 +1,8 @@
+FindFood tell me nutrition facts of {food}
+FindFood what are nutrition facts of {food}
+FindFood tell me facts about {food}
+FindFood i want to know nutrition facts of {food}
+FindFood i want to know facts about {food}
+FindFood ask about facts for {food}
+FindFood ask about {food}
+AnyFood pick up any food
