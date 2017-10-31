@@ -13,16 +13,16 @@ let http = require('http');
 
 // --------------- Helpers that build all of the responses -----------------------
 
-function buildSpeechletResponse(title, output, repromptText, shouldEndSession) {
+function buildSpeechletResponse(title, cardOutput, speechOutput, repromptText, shouldEndSession) {
     return {
         outputSpeech: {
             type: 'PlainText',
-            text: output,
+            text: speechOutput,
         },
         card: {
             type: 'Simple',
-            title: `SessionSpeechlet - ${title}`,
-            content: `SessionSpeechlet - ${output}`,
+            title: `${title}`,
+            content: `${cardOutput}`,
         },
         reprompt: {
             outputSpeech: {
@@ -48,25 +48,26 @@ function buildResponse(sessionAttributes, speechletResponse) {
 function getWelcomeResponse(callback) {
     // If we wanted to initialize the session to have some attributes we could add those here.
     const sessionAttributes = {};
-    const cardTitle = 'Welcome';
+    const cardTitle = 'Welcome to Indian Food';
+    const cardOutput = 'Please tell me which food do you want to know nutrition facts of.';
     const speechOutput = 'Welcome to Indian Food. ' +
-        'Please tell me which food due to want to know nutrition facts of.';
+        'Please tell me which food do you want to know nutrition facts of.';
     // If the user either does not reply to the welcome message or says something that is not
     // understood, they will be prompted again with this text.
     const repromptText = 'Which food do you want to know about?';
     const shouldEndSession = false;
 
     callback(sessionAttributes,
-        buildSpeechletResponse(cardTitle, speechOutput, repromptText, shouldEndSession));
+        buildSpeechletResponse(cardTitle, cardOutput, speechOutput, repromptText, shouldEndSession));
 }
 
 function handleSessionEndRequest(callback) {
-    const cardTitle = 'Session Ended';
+    const cardTitle = 'Bye!';
     const speechOutput = 'Thank you for trying Indian Food. Hope this helped you. Have a nice day!';
     // Setting this to true ends the session and exits the skill.
     const shouldEndSession = true;
 
-    callback({}, buildSpeechletResponse(cardTitle, speechOutput, null, shouldEndSession));
+    callback({}, buildSpeechletResponse(cardTitle, speechOutput, speechOutput, null, shouldEndSession));
 }
 
 /**
@@ -77,6 +78,7 @@ function getFoodFact(intent, session, callback) {
     const repromptText = null;
     const sessionAttributes = {};
     let shouldEndSession = false;
+    let cardOutput = '';
     let speechOutput = '';
 
     console.log(`##### FOOD: ${food}`);
@@ -91,37 +93,37 @@ function getFoodFact(intent, session, callback) {
 
                 if(body.name) {
                     console.log('Response from IndiaFood: ' + body.name);
+                    cardOutput = `Nutrition facts of "${body.name.replace('&', ' and ')}" are as follows. \n` +
+                        `Fat: ${body.fatInGm} grams, \nCarbs: ${body.carbInGm} grams, \nProtein: ${body.proteinInGm} grams, \nCalories: ${body.calories}`;
                     speechOutput = `Nutrition facts of ${body.name.replace('&', ' and ')} are as follows. ` +
-                        `Fat: ${body.fatInGm} grams, Carbs: ${body.carbInGm} grams, Protein: ${body.proteinInGm} grams, Calories: ${body.calories}`;
+                        `Fat: ${body.fatInGm} grams, Carbs: ${body.carbInGm} grams, Protein: ${body.proteinInGm} grams, Calories: ${body.calories}. Do you want to know about any other food?`;
                 } else {
                     console.log('Response from IndiaFood: Food details not found');
-                    speechOutput = `Nutrition facts of ${food} are not found. Please try some other food.`;
+                    speechOutput = `Nutrition facts of "${food}" are not found. Please try some other food.`;
+                    cardOutput = speechOutput;
                 }
-                shouldEndSession = true;
+                shouldEndSession = false;
 
                 callback(sessionAttributes,
-                    buildSpeechletResponse(intent.name, speechOutput, repromptText, shouldEndSession));
+                    buildSpeechletResponse(food, cardOutput, speechOutput, repromptText, shouldEndSession));
             });
 
         }).on('error', function(e) {
-            speechOutput = 'Could not get data. Sorry!';
+            speechOutput = `We could not connect to the remote server to get data about "${food}". Sorry!`;
+            cardOutput = speechOutput;
             console.log("Got error: " + e.message);
 
             callback(sessionAttributes,
-                buildSpeechletResponse(intent.name, speechOutput, repromptText, shouldEndSession));
+                buildSpeechletResponse("Error connecting to Indian Food server", cardOutput, speechOutput, repromptText, shouldEndSession));
         });
 
 
     } else {
         speechOutput = "I'm not sure which food you are looking for";
+        cardOutput = speechOutput;
 
         callback(sessionAttributes,
-            buildSpeechletResponse(intent.name, speechOutput, repromptText, shouldEndSession));    }
-
-    // Setting repromptText to null signifies that we do not want to reprompt the user.
-    // If the user does not respond or says something that is not understood, the session
-    // will end.
-
+            buildSpeechletResponse('Food name not recognised', cardOutput, speechOutput, repromptText, shouldEndSession));    }
 }
 
 
@@ -132,6 +134,7 @@ function getAnyFoodFact(intent, session, callback) {
     const repromptText = null;
     const sessionAttributes = {};
     let shouldEndSession = false;
+    let cardOutput = '';
     let speechOutput = '';
 
     var url = 'http://indian-food.herokuapp.com/api/food/rasgulla';
@@ -142,21 +145,30 @@ function getAnyFoodFact(intent, session, callback) {
             body = JSON.parse(body);
             console.log('BODY: ' + body);
 
-            console.log('Response from IndiaFood: ' + body.name);
-            speechOutput = `Nutrition facts of ${body.name.replace('&', ' and ')} are as follows. ` +
-                `Fat: ${body.fatInGm} grams, Carbs: ${body.carbInGm} grams, Protein: ${body.proteinInGm} grams, Calories: ${body.calories}`;
+            if(body.name) {
+                console.log('Response from IndiaFood: ' + body.name);
+                cardOutput = `Nutrition facts of "${body.name.replace('&', ' and ')}" are as follows. \n` +
+                    `Fat: ${body.fatInGm} grams, \nCarbs: ${body.carbInGm} grams, \nProtein: ${body.proteinInGm} grams, \nCalories: ${body.calories}`;
+                speechOutput = `Nutrition facts of ${body.name.replace('&', ' and ')} are as follows. ` +
+                    `Fat: ${body.fatInGm} grams, Carbs: ${body.carbInGm} grams, Protein: ${body.proteinInGm} grams, Calories: ${body.calories}`;
+            } else {
+                console.log('Response from IndiaFood: Food details not found');
+                speechOutput = `Nutrition facts of "${food}" are not found. Please try some other food.`;
+                cardOutput = speechOutput;
+            }
             shouldEndSession = true;
 
             callback(sessionAttributes,
-                buildSpeechletResponse(intent.name, speechOutput, repromptText, shouldEndSession));
+                buildSpeechletResponse(food, cardOutput, speechOutput, repromptText, shouldEndSession));
         });
 
     }).on('error', function(e) {
-        speechOutput = 'Could not get data. Sorry!';
+        speechOutput = `We could not connect to the remote server to get data about "${food}". Sorry!`;
+        cardOutput = speechOutput;
         console.log("Got error: " + e.message);
 
         callback(sessionAttributes,
-            buildSpeechletResponse(intent.name, speechOutput, repromptText, shouldEndSession));
+            buildSpeechletResponse("Error connecting to Indian Food server", cardOutput, speechOutput, repromptText, shouldEndSession));
     });
 }
 
