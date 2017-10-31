@@ -139,7 +139,7 @@ function getAnyFoodFact(intent, session, callback) {
     let cardOutput = '';
     let speechOutput = '';
 
-    var url = 'http://indian-food.herokuapp.com/api/food';
+    var url = 'http://indian-food.herokuapp.com/api/anyfood';
     console.log(`URL: ${url}`);
 
     http.get(url, function(res) {
