@@ -85,7 +85,7 @@ function getFoodFact(intent, session, callback) {
 
     console.log(`##### FOOD: ${food}`);
     if (food) {
-        const url = 'http://indian-food.herokuapp.com/api/food/' + food;
+        const url = 'https://indianfoodfacts-api.herokuapp.com/api/food/' + food;
         console.log(`URL: ${url}`);
 
         http.get(url, function(res) {
@@ -139,7 +139,7 @@ function getAnyFoodFact(intent, session, callback) {
     let cardOutput = '';
     let speechOutput = '';
 
-    var url = 'http://indian-food.herokuapp.com/api/anyfood';
+    var url = 'https://indianfoodfacts-api.herokuapp.com/api/anyfood';
     console.log(`URL: ${url}`);
 
     http.get(url, function(res) {
@@ -155,7 +155,7 @@ function getAnyFoodFact(intent, session, callback) {
                     `Fat: ${body.fatInGm} grams, Carbs: ${body.carbInGm} grams, Protein: ${body.proteinInGm} grams, Calories: ${body.calories}`;
             } else {
                 console.log('Response from IndiaFood: Food details not found');
-                speechOutput = `Nutrition facts of "${food}" are not found. Please try some other food.`;
+                speechOutput = `Could not get food facts. Sorry!`;
                 cardOutput = speechOutput;
             }
             shouldEndSession = true;
@@ -165,7 +165,7 @@ function getAnyFoodFact(intent, session, callback) {
         });
 
     }).on('error', function(e) {
-        speechOutput = `We could not connect to the remote server to get data about "${food}". Sorry!`;
+        speechOutput = `We could not connect to the remote server to get data. Sorry!`;
         cardOutput = speechOutput;
         console.log("Got error: " + e.message);
 
