@@ -85,7 +85,7 @@ function getFoodFact(intent, session, callback) {
 
     console.log(`##### FOOD: ${food}`);
     if (food) {
-        const url = 'https://indianfoodfacts-api.herokuapp.com/api/food/' + food;
+        const url = 'http://indianfoodfacts-api.herokuapp.com/api/food/' + food;
         console.log(`URL: ${url}`);
 
         http.get(url, function(res) {
@@ -139,7 +139,7 @@ function getAnyFoodFact(intent, session, callback) {
     let cardOutput = '';
     let speechOutput = '';
 
-    var url = 'https://indianfoodfacts-api.herokuapp.com/api/anyfood';
+    var url = 'http://indianfoodfacts-api.herokuapp.com/api/anyfood';
     console.log(`URL: ${url}`);
 
     http.get(url, function(res) {
